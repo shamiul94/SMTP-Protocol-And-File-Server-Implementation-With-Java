@@ -7,6 +7,7 @@ package offline2;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -16,7 +17,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -25,13 +30,17 @@ import java.util.StringTokenizer;
 public class finalHTTPWorker implements Runnable {
 
     private Socket socket;
+    private int logNo;
     InputStream is = null;
     OutputStream os = null;
     int id;
 
     public finalHTTPWorker(Socket s, int id) {
+        this.logNo = 1;
         this.socket = s;
         this.id = id;
+
+        
 
         try {
             is = s.getInputStream();
@@ -131,41 +140,14 @@ public class finalHTTPWorker implements Runnable {
 
         System.out.println("File " + fileName + " found.");
 
-        String contentType = "html";
+        String contentType = "text/html";
 
-        if (fileType.equals("html") || fileType.equals("css")
-                || fileType.equals("txt") || fileType.equals("js")) {
+        Path path = new File(fileName).toPath();
 
-            String suffix;
-            switch (fileType) {
-                case "txt":
-                    suffix = "plain";
-                    break;
-                case "html":
-                    suffix = "html";
-                    break;
-                case "css":
-                    suffix = "css";
-                    break;
-                case "js":
-                    suffix = "javascript";
-                    break;
-                default:
-                    suffix = "html";
-                    break;
-            }
-            contentType = "text/" + suffix;
-
-        } else if (fileType.equals("gif") || fileType.equals("png")
-                || fileType.equals("jpeg") || fileType.equals("jpg")
-                || fileType.equals("bmp") || fileType.equals("webp")) {
-
-            contentType = "image/" + fileType;
-            if (fileType.equals("jpg")) {
-                contentType = "image/" + "jpeg";
-            }
-        } else if (fileType.equals("pdf") || fileType.equals("xml")) {
-            contentType = "application/" + fileType;
+        try {
+            contentType = Files.probeContentType(path);
+        } catch (IOException ex) {
+            System.err.println("Couldn't find MIME Type.");
         }
 
         int fileLength = (int) file.length();
@@ -215,14 +197,28 @@ public class finalHTTPWorker implements Runnable {
             socket.close();
 
         } catch (IOException ex) {
-            System.err.println("Couldn't send the file.");
+            System.out.println("File sent successfully!");
         }
 
     }
 
+    public void writeInLogFile(String str) {
+        try {
+            FileWriter fw = new FileWriter("log.txt", true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            PrintWriter out = new PrintWriter(bw);
+            out.println(str);
+            out.close();
+            bw.close();
+            fw.close();
+        } catch (IOException e) {
+            System.err.println("Couldn't write in Log.txt file.");
+        }
+    }
+
     @Override
     public void run() {
-        System.out.println("This is id: " + id);
+
         BufferedReader br = new BufferedReader(new InputStreamReader(is));
         PrintWriter pw = new PrintWriter(os);
 
@@ -230,6 +226,9 @@ public class finalHTTPWorker implements Runnable {
         response = getClientResponse(br);
 
         if (response.startsWith("POST")) {
+
+            writeInLogFile("POST Request found.");
+
             String fileName, userName, tempResponse;
             int indexOfUser;
 
@@ -262,19 +261,11 @@ public class finalHTTPWorker implements Runnable {
                 fileName = "index.html";
             }
 
+            writeInLogFile("GET Request for " + fileName + " found.");
+
             sendFile(br, pw, fileName);
         }
 
-    /*
-        GET /index.hhh HTTP/1.1
-        Host: localhost:6789
-        Connection: keep-alive
-        Upgrade-Insecure-Requests: 1
-        User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36
-        Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,/*;q=0.8
-        Accept-Encoding: gzip, deflate, br
-        Accept-Language: en-US,en;q=0.9
-    */
     }
 
 }

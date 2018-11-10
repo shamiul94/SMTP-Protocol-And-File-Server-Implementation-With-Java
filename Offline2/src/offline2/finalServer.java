@@ -5,6 +5,7 @@
  */
 package offline2;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -15,21 +16,26 @@ import java.net.Socket;
  */
 public class finalServer {
 
-    private static int workerThreadNo, id;
+    private static int id;
 
     public static void main(String[] args) throws IOException {
-        workerThreadNo = 0;
         id = 0;
         int port = 6789;
         ServerSocket ss = new ServerSocket(port);
         System.out.println("Server Socket at port " + port + " is opened successfully.");
+
+        File log = new File("log.txt");
+        try {
+            log.delete();
+        } catch (Exception E) {
+
+        }
 
         while (true) {
             Socket s = ss.accept();
             finalHTTPWorker worker = new finalHTTPWorker(s, id);
             Thread t = new Thread(worker);
             t.start();
-            workerThreadNo++;
             id++;
         }
     }

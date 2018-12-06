@@ -1,0 +1,5 @@
+sudo ifconfig eth0:1 10.0.2.1 netmask 255.255.255.0 up
+sudo ifconfig eth0:2 10.0.2.2 netmask 255.255.255.0 up
+sudo ifconfig eth0:3 10.0.2.3 netmask 255.255.255.0 up
+sudo ifconfig eth0:4 10.0.2.4 netmask 255.255.255.0 up
+sudo ifconfig eth0:100 10.0.2.100 netmask 255.255.255.0 up
